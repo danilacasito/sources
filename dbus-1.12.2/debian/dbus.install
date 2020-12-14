@@ -1,0 +1,28 @@
+#!/usr/bin/dh-exec
+
+usr/bin/dbus-daemon
+usr/bin/dbus-cleanup-sockets
+usr/bin/dbus-run-session
+usr/bin/dbus-send
+usr/bin/dbus-update-activation-environment
+usr/bin/dbus-uuidgen
+usr/bin/dbus-monitor
+usr/lib/dbus-1.0/dbus-daemon-launch-helper
+usr/share/dbus-1/services
+usr/share/dbus-1/session.conf
+usr/share/dbus-1/system.conf
+usr/share/dbus-1/system-services
+
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-cleanup-sockets.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-daemon.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-monitor.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-run-session.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-send.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-update-activation-environment.1
+<!nodoc !pkg.dbus.minimal> usr/share/man/man1/dbus-uuidgen.1
+[linux-any] <!pkg.dbus.minimal> lib/systemd/system/dbus.service
+[linux-any] <!pkg.dbus.minimal> lib/systemd/system/dbus.socket
+[linux-any] <!pkg.dbus.minimal> lib/systemd/system/multi-user.target.wants/dbus.service
+[linux-any] <!pkg.dbus.minimal> lib/systemd/system/sockets.target.wants/dbus.socket
+[linux-any] <!pkg.dbus.minimal> usr/lib/sysusers.d
+[linux-any] <!pkg.dbus.minimal> usr/lib/tmpfiles.d

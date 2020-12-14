@@ -1,0 +1,7 @@
+debian/session.conf-system.conf-include-legacy-files-as-.dpkg-ba.patch
+ubuntu/aa-get-connection-apparmor-security-context.patch
+ubuntu/dont-stop-dbus.patch
+0001-auth-Reject-DBUS_COOKIE_SHA1-for-users-other-than-th.patch
+0002-test-Add-basic-test-coverage-for-DBUS_COOKIE_SHA1.patch
+CVE-2020-12049-1.patch
+CVE-2020-12049-2.patch

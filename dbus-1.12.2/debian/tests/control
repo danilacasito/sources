@@ -1,0 +1,13 @@
+Tests: gnome-desktop-testing
+Depends: dbus, dbus-tests, dbus-x11, gnome-desktop-testing, xauth, xvfb
+
+Tests: apparmor
+Restrictions: allow-stderr, needs-root
+Depends: apparmor, dbus, dbus-tests
+
+Tests: root
+Restrictions: allow-stderr, needs-root
+Depends: dbus, dbus-tests
+
+Tests: build
+Depends: libdbus-1-dev, dbus, build-essential

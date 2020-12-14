@@ -1,0 +1,9 @@
+#!/usr/bin/dh-exec
+
+usr/bin/dbus-test-tool
+usr/lib/dbus-1.0/debug-build
+usr/lib/dbus-1.0/installed-tests
+usr/share/installed-tests/dbus
+usr/share/installed-tests/dbus-debug-build
+
+<!nodoc> usr/share/man/man1/dbus-test-tool.1

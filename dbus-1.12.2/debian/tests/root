@@ -1,0 +1,40 @@
+#!/bin/sh
+# Run some tests as root. Output TAP format because why not
+
+set -e
+
+timeout="timeout 300s"
+ret=0
+i=0
+
+for d in /usr/lib/dbus-1.0/installed-tests/dbus /usr/lib/dbus-1.0/debug-build/libexec/installed-tests/dbus
+do
+    DBUS_TEST_DATA="$d/data"
+    export DBUS_TEST_DATA
+
+    for t in \
+        $d/test-uid-permissions \
+        ${NULL}
+    do
+        i=$(( $i + 1 ))
+        echo "# Subtest: $t"
+        echo "x" > "$ADTTMP/result"
+        ( set +e; $timeout $t --tap; echo "$?" > "$ADTTMP/result" ) | sed 's/^/    /'
+        e="$(cat "$ADTTMP/result")"
+        case "$e" in
+            (0)
+                echo "ok $i - $t"
+                ;;
+            (77)
+                echo "ok $i # SKIP $t"
+                ;;
+            (*)
+                echo "not ok $i - $t ($e)"
+                ret=1
+                ;;
+        esac
+    done
+done
+
+echo "1..$i"
+exit $ret

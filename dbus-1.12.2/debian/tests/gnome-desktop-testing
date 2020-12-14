@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+unset DISPLAY
+
+DBUS_TEST_HOMEDIR="$ADTTMP"
+export DBUS_TEST_HOMEDIR
+
+exec 2>&1
+
+exec gnome-desktop-testing-runner dbus

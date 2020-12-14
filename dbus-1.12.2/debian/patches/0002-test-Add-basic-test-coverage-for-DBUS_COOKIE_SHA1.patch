@@ -1,0 +1,283 @@
+From 066aea77281d99b237cc1c90ea119a0ad9653281 Mon Sep 17 00:00:00 2001
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 30 May 2019 12:58:28 +0100
+Subject: [PATCH 2/2] test: Add basic test coverage for DBUS_COOKIE_SHA1
+
+We don't actually complete successful authentication, because that
+would require us to generate a cookie and compute the correct SHA1,
+which is difficult to do in a deterministic authentication script.
+However, we do assert that dbus#269 (CVE-2019-12749) has been fixed.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ dbus/dbus-auth-script.c                       | 87 ++++++++++++++++++-
+ dbus/dbus-sysdeps-util-unix.c                 | 40 +++++++++
+ dbus/dbus-sysdeps-util-win.c                  | 25 ++++++
+ dbus/dbus-sysdeps.h                           | 10 +++
+ test/Makefile.am                              |  2 +
+ .../auth/cookie-sha1-username.auth-script     | 12 +++
+ test/data/auth/cookie-sha1.auth-script        | 11 +++
+ 7 files changed, 184 insertions(+), 3 deletions(-)
+ create mode 100644 test/data/auth/cookie-sha1-username.auth-script
+ create mode 100644 test/data/auth/cookie-sha1.auth-script
+
+Index: dbus-1.12.2/dbus/dbus-auth-script.c
+===================================================================
+--- dbus-1.12.2.orig/dbus/dbus-auth-script.c	2019-06-10 14:05:11.593233984 -0400
++++ dbus-1.12.2/dbus/dbus-auth-script.c	2019-06-10 14:05:11.589233973 -0400
+@@ -34,6 +34,8 @@
+ #include "dbus-credentials.h"
+ #include "dbus-internals.h"
+ 
++#include "test/test-utils.h"
++
+ /**
+  * @defgroup DBusAuthScript code for running unit test scripts for DBusAuth
+  * @ingroup  DBusInternals
+@@ -518,9 +520,43 @@ _dbus_auth_script_run (const DBusString
+           /* Replace USERID_HEX with our username in hex */
+           {
+             int where;
+-            
+-            if (_dbus_string_find (&to_send, 0,
+-                                   "USERID_HEX", &where))
++
++            if (_dbus_string_find (&to_send, 0, "WRONG_USERID_HEX", &where))
++              {
++                /* This must be checked for before USERID_HEX, because
++                 * that's a substring. */
++                DBusString uid;
++
++                if (!_dbus_string_init (&uid))
++                  {
++                    _dbus_warn ("no memory for uid");
++                    _dbus_string_free (&to_send);
++                    goto out;
++                  }
++
++                if (!_dbus_test_append_different_uid (&uid))
++                  {
++                    _dbus_warn ("no memory for uid");
++                    _dbus_string_free (&to_send);
++                    _dbus_string_free (&uid);
++                    goto out;
++                  }
++
++                _dbus_string_delete (&to_send, where,
++                                     (int) strlen ("WRONG_USERID_HEX"));
++
++                if (!_dbus_string_hex_encode (&uid, 0, &to_send, where))
++                  {
++                    _dbus_warn ("no memory to subst WRONG_USERID_HEX");
++                    _dbus_string_free (&to_send);
++                    _dbus_string_free (&uid);
++                    goto out;
++                  }
++
++                _dbus_string_free (&uid);
++              }
++            else if (_dbus_string_find (&to_send, 0,
++                                        "USERID_HEX", &where))
+               {
+                 DBusString username;
+ 
+@@ -553,6 +589,51 @@ _dbus_auth_script_run (const DBusString
+                 _dbus_string_free (&username);
+               }
+             else if (_dbus_string_find (&to_send, 0,
++                                        "WRONG_USERNAME_HEX", &where))
++              {
++                /* This must be checked for before USERNAME_HEX, because
++                 * that's a substring. */
++#ifdef DBUS_UNIX
++                DBusString username;
++
++                if (!_dbus_string_init (&username))
++                  {
++                    _dbus_warn ("no memory for username");
++                    _dbus_string_free (&to_send);
++                    goto out;
++                  }
++
++                if (!_dbus_test_append_different_username (&username))
++                  {
++                    _dbus_warn ("no memory for username");
++                    _dbus_string_free (&to_send);
++                    _dbus_string_free (&username);
++                    goto out;
++                  }
++
++                _dbus_string_delete (&to_send, where,
++                                     (int) strlen ("WRONG_USERNAME_HEX"));
++
++                if (!_dbus_string_hex_encode (&username, 0,
++                                              &to_send, where))
++                  {
++                    _dbus_warn ("no memory to subst WRONG_USERNAME_HEX");
++                    _dbus_string_free (&to_send);
++                    _dbus_string_free (&username);
++                    goto out;
++                  }
++
++                _dbus_string_free (&username);
++#else
++                /* No authentication mechanism uses the login name on
++                 * Windows, so there's no point in it appearing in an
++                 * auth script that is not UNIX_ONLY. */
++                _dbus_warn ("WRONG_USERNAME_HEX cannot be used on Windows");
++                _dbus_string_free (&to_send);
++                goto out;
++#endif
++              }
++            else if (_dbus_string_find (&to_send, 0,
+                                         "USERNAME_HEX", &where))
+               {
+                 DBusString username;
+Index: dbus-1.12.2/dbus/dbus-sysdeps-util-unix.c
+===================================================================
+--- dbus-1.12.2.orig/dbus/dbus-sysdeps-util-unix.c	2019-06-10 14:05:11.593233984 -0400
++++ dbus-1.12.2/dbus/dbus-sysdeps-util-unix.c	2019-06-10 14:05:11.589233973 -0400
+@@ -1512,3 +1512,43 @@ _dbus_get_session_config_file (DBusStrin
+ 
+   return _dbus_string_append (str, DBUS_SESSION_CONFIG_FILE);
+ }
++
++#ifdef DBUS_ENABLE_EMBEDDED_TESTS
++
++/*
++ * Set uid to a machine-readable authentication identity (numeric Unix
++ * uid or ConvertSidToStringSid-style Windows SID) that is likely to exist,
++ * and differs from the identity of the current process.
++ *
++ * @param uid Populated with a machine-readable authentication identity
++ *    on success
++ * @returns #FALSE if no memory
++ */
++dbus_bool_t
++_dbus_test_append_different_uid (DBusString *uid)
++{
++  if (geteuid () == 0)
++    return _dbus_string_append (uid, "65534");
++  else
++    return _dbus_string_append (uid, "0");
++}
++
++/*
++ * Set uid to a human-readable authentication identity (login name)
++ * that is likely to exist, and differs from the identity of the current
++ * process. This function currently only exists on Unix platforms.
++ *
++ * @param uid Populated with a machine-readable authentication identity
++ *    on success
++ * @returns #FALSE if no memory
++ */
++dbus_bool_t
++_dbus_test_append_different_username (DBusString *username)
++{
++  if (geteuid () == 0)
++    return _dbus_string_append (username, "nobody");
++  else
++    return _dbus_string_append (username, "root");
++}
++
++#endif
+Index: dbus-1.12.2/dbus/dbus-sysdeps-util-win.c
+===================================================================
+--- dbus-1.12.2.orig/dbus/dbus-sysdeps-util-win.c	2019-06-10 14:05:11.593233984 -0400
++++ dbus-1.12.2/dbus/dbus-sysdeps-util-win.c	2019-06-10 14:05:11.589233973 -0400
+@@ -1654,3 +1654,28 @@ _dbus_get_session_config_file (DBusStrin
+ 
+   return _dbus_get_config_file_name(str, "session.conf");
+ }
++
++#ifdef DBUS_ENABLE_EMBEDDED_TESTS
++
++#define ANONYMOUS_SID "S-1-5-7"
++#define LOCAL_SYSTEM_SID "S-1-5-18"
++
++dbus_bool_t
++_dbus_test_append_different_uid (DBusString *uid)
++{
++  char *sid = NULL;
++  dbus_bool_t ret;
++
++  if (!_dbus_getsid (&sid, _dbus_getpid ()))
++    return FALSE;
++
++  if (strcmp (sid, ANONYMOUS_SID) == 0)
++    ret = _dbus_string_append (uid, LOCAL_SYSTEM_SID);
++  else
++    ret = _dbus_string_append (uid, ANONYMOUS_SID);
++
++  LocalFree (sid);
++  return ret;
++}
++
++#endif
+Index: dbus-1.12.2/dbus/dbus-sysdeps.h
+===================================================================
+--- dbus-1.12.2.orig/dbus/dbus-sysdeps.h	2019-06-10 14:05:11.593233984 -0400
++++ dbus-1.12.2/dbus/dbus-sysdeps.h	2019-06-10 14:05:11.589233973 -0400
+@@ -678,6 +678,16 @@ dbus_bool_t     _dbus_rlimit_restore_fd_
+                                                             DBusError    *error);
+ void            _dbus_rlimit_free                          (DBusRLimit   *lim);
+ 
++#ifdef DBUS_ENABLE_EMBEDDED_TESTS
++_DBUS_GNUC_WARN_UNUSED_RESULT
++dbus_bool_t _dbus_test_append_different_uid (DBusString *uid);
++
++#ifdef DBUS_UNIX
++_DBUS_GNUC_WARN_UNUSED_RESULT
++dbus_bool_t _dbus_test_append_different_username (DBusString *username);
++#endif
++#endif  /* DBUS_ENABLE_EMBEDDED_TESTS */
++
+ /** @} */
+ 
+ DBUS_END_DECLS
+Index: dbus-1.12.2/test/Makefile.am
+===================================================================
+--- dbus-1.12.2.orig/test/Makefile.am	2019-06-10 14:05:11.593233984 -0400
++++ dbus-1.12.2/test/Makefile.am	2019-06-10 14:05:11.589233973 -0400
+@@ -459,6 +459,8 @@ static_data = \
+ 	data/auth/anonymous-server-successful.auth-script \
+ 	data/auth/cancel.auth-script \
+ 	data/auth/client-out-of-mechanisms.auth-script \
++	data/auth/cookie-sha1-username.auth-script \
++	data/auth/cookie-sha1.auth-script \
+ 	data/auth/external-failed.auth-script \
+ 	data/auth/external-root.auth-script \
+ 	data/auth/external-silly.auth-script \
+Index: dbus-1.12.2/test/data/auth/cookie-sha1-username.auth-script
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ dbus-1.12.2/test/data/auth/cookie-sha1-username.auth-script	2019-06-10 14:05:11.589233973 -0400
+@@ -0,0 +1,12 @@
++UNIX_ONLY
++SERVER
++SEND 'AUTH DBUS_COOKIE_SHA1 WRONG_USERNAME_HEX'
++EXPECT_COMMAND REJECTED
++EXPECT_STATE WAITING_FOR_INPUT
++EXPECT_HAVE_NO_CREDENTIALS
++SEND 'AUTH DBUS_COOKIE_SHA1 USERNAME_HEX'
++EXPECT_COMMAND DATA
++EXPECT_STATE WAITING_FOR_INPUT
++EXPECT_HAVE_NO_CREDENTIALS
++# We don't actually complete DBUS_COOKIE_SHA1 authentication, because
++# it's non-trivial.
+Index: dbus-1.12.2/test/data/auth/cookie-sha1.auth-script
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ dbus-1.12.2/test/data/auth/cookie-sha1.auth-script	2019-06-10 14:05:11.589233973 -0400
+@@ -0,0 +1,11 @@
++SERVER
++SEND 'AUTH DBUS_COOKIE_SHA1 WRONG_USERID_HEX'
++EXPECT_COMMAND REJECTED
++EXPECT_STATE WAITING_FOR_INPUT
++EXPECT_HAVE_NO_CREDENTIALS
++SEND 'AUTH DBUS_COOKIE_SHA1 USERID_HEX'
++EXPECT_COMMAND DATA
++EXPECT_STATE WAITING_FOR_INPUT
++EXPECT_HAVE_NO_CREDENTIALS
++# We don't actually complete DBUS_COOKIE_SHA1 authentication, because
++# it's non-trivial.
