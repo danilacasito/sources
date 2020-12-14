@@ -1,0 +1,43 @@
+ dpkg-buildpackage -rfakeroot -us -uc -ui
+dpkg-buildpackage: información: paquete fuente xfwm4
+dpkg-buildpackage: información: versión de las fuentes 4.14.0-1
+dpkg-buildpackage: información: distribución de las fuentes unstable
+dpkg-buildpackage: información: fuentes modificadas por DANIEL <daniel@unknown>
+ dpkg-source --before-build xfwm4-4.14.0
+dpkg-buildpackage: información: arquitectura del sistema i386
+ fakeroot debian/rules clean
+dh clean
+   dh_autoreconf_clean
+   dh_clean
+ dpkg-source -b xfwm4-4.14.0
+dpkg-source: información: usando el formato de fuente «3.0 (quilt)»
+dpkg-source: información: construyendo «xfwm4» usando «./xfwm4_4.14.0.orig.tar.xz», que está presente en el sistema
+dpkg-source: aviso: ignoring deletion of file configure, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file depcomp, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file compile, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file ltmain.sh, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file aclocal.m4, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file missing, use --include-removal to override
+dpkg-source: aviso: ignoring deletion of file m4/libtool.m4, use --include-removal to override
+dpkg-source: información: construyendo xfwm4 en xfwm4_4.14.0-1.debian.tar.xz
+dpkg-source: información: construyendo xfwm4 en xfwm4_4.14.0-1.dsc
+ debian/rules build
+dh build
+   dh_update_autotools_config
+   dh_autoreconf
+libtoolize: putting auxiliary files in '.'.
+libtoolize: copying file './ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'm4'.
+libtoolize: copying file 'm4/libtool.m4'
+libtoolize: copying file 'm4/ltoptions.m4'
+libtoolize: copying file 'm4/ltsugar.m4'
+libtoolize: copying file 'm4/ltversion.m4'
+libtoolize: copying file 'm4/lt~obsolete.m4'
+configure.ac:104: error: possibly undefined macro: AC_DEFINE
+      If this token and others are legitimate, please use m4_pattern_allow.
+      See the Autoconf documentation.
+autoreconf: /usr/bin/autoconf failed with exit status: 1
+dh_autoreconf: autoreconf -f -i returned exit code 1
+debian/rules:18: fallo en las instrucciones para el objetivo 'build'
+make: *** [build] Error 2
+dpkg-buildpackage: fallo: debian/rules build subprocess returned exit status 2

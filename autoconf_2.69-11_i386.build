@@ -1,0 +1,11 @@
+ dpkg-buildpackage -rfakeroot -us -uc -ui
+dpkg-buildpackage: información: paquete fuente autoconf
+dpkg-buildpackage: información: versión de las fuentes 2.69-11
+dpkg-buildpackage: información: distribución de las fuentes unstable
+dpkg-buildpackage: información: fuentes modificadas por Ben Pfaff <pfaffben@debian.org>
+ dpkg-source --before-build autoconf-2.69
+dpkg-buildpackage: información: arquitectura del sistema i386
+dpkg-source: información: usando opciones de autoconf-2.69/debian/source/options: --extend-diff-ignore=man/.*\.1$|doc/autoconf.info|doc/stamp-vti|doc/version.texi
+dpkg-checkbuilddeps: fallo: Unmet build dependencies: texinfo (>= 4.6) texlive-base texlive-generic-recommended texlive-latex-base texlive-latex-recommended texlive-fonts-recommended help2man cm-super
+dpkg-buildpackage: aviso: Las dependencias y conflictos de construcción no están satisfechas, interrumpiendo
+dpkg-buildpackage: aviso: (Use la opción «-d» para anularlo.)
