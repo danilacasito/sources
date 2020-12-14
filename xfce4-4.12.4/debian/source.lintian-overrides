@@ -1,0 +1,2 @@
+# no need to depend on xfce4 since it's just a metapackage
+xfce4 source: dbg-package-missing-depends xfce4-dbg

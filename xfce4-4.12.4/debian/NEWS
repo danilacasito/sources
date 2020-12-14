@@ -1,0 +1,47 @@
+xfce4 (4.6.0.1) unstable; urgency=low
+
+  Xfce 4.6 includes multiple changes which are not directly visible to the
+  user but might cause problems in rare cases.
+
+  Settings management have been moved from the old MCS Manager to the xfconf
+  system. User settings will be migrated automatically at first Xfce 4.6 
+  startup using the /usr/lib/xfce4/xfconf-migration/xfconf-migration-4.6.pl
+  script contained in xfce4-utils. Once those settings have been migrated,
+  the automatic run will be disabled but the script will stay (for future
+  users).
+
+  Menus are now managed using a dedicated library, used by various Xfce
+  components (including xfdesktop4 and the menu panel plugin). This library
+  tries to support the freedesktop.org specifications, but is not totally
+  complete and thus lacks the support for some items, like <Merge>.
+  This renders useless the menu editor previously shipped with Xfce 4.4.
+  Solutions for menu editing can be found at the following address:
+  http://wiki.xfce.org/howto/customize-menu
+
+  Xfce 4.6 now use freedesktop.org compliant icon naming spec. Rodent theme
+  (contained in xfce4-icon-theme) is not freedesktop.org compliant, so if
+  you use it in Xfce (or GNOME, or KDE 4) it will miss some icons here and
+  there. You should now switch to Tango (in tango-icon-theme) or another
+  freedesktop.org compliant theme.
+
+  As the upgrade is pretty invasive, it is recommended to quit Xfce before
+  doing so, but it's not required and upgrades have been made from the
+  desktop environment without problems. In that case, be sure to quit Xfce
+  not long after the upgrade.
+
+ -- Yves-Alexis Perez <corsac@debian.org>  Thu, 02 Apr 2009 21:19:53 +0200
+
+xfce4 (4.3.90.1-1) unstable; urgency=low
+
+  This is the 4.4beta1 release of xfce.  If you are running xfce at the time
+  you do this upgrade please consider restarting very shortly afterwards.
+
+  This is a major upgrade and as such you will lose some of your config - there
+  is no sane way for us to avoid this.  Notably the panel config will need to
+  be changed.  Also as this is a beta please consider reporting any bugs to
+  upstream first or to both the BTS and upstream's bugzilla at
+  http://bugzilla.xfce.org/
+
+  Also #xfce and #debian-xfce on irc.freenode.net can be useful resources.
+
+ -- Simon Huggins <huggie@earth.li>  Wed, 03 May 2006 17:37:50 +0100
