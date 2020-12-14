@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export DEB_LDFLAGS_MAINT_APPEND=-Wl,--as-needed -Wl,-O1 -Wl,-z,defs
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
+%:
+	dh $@ --parallel
+
+override_dh_auto_configure:
+	NOCONFIGURE=1 xdt-autogen
+	dh_auto_configure -- --disable-perl-bindings --disable-silent-rules
+
+override_dh_auto_test:
+
+override_dh_install:
+	dh_install --fail-missing -X .la
+
+override_dh_strip:
+	dh_strip --dbgsym-migration='libxfconf-0-2-dbg (<< 4.12.0-3~)'
+
+override_dh_shlibdeps:
+	dh_shlibdeps -p xfconf -X debian/xfconf/usr/bin/xfconf-query -- \
+    -dRecommends debian/xfconf/usr/bin/xfconf-query -dDepends
+	dh_shlibdeps --remaining-packages
